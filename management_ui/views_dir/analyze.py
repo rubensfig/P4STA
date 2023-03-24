@@ -216,6 +216,8 @@ def get_ext_host_zip_list():
         files[i] = [files[i], "results/" + fid + "/" +
                     name[:-4] + fid + ".svg"]
 
+    files.append([folder + "/tos_timestamp_list_" + fid + ".csv",
+                  "results/" + fid + "/tos_timestamp_list_" + fid + ".csv"])
     files.append([folder + "/timestamp1_list_" + fid + ".csv",
                   "results/" + fid + "/timestamp1_list_" + fid + ".csv"])
     files.append([folder + "/timestamp2_list_" + fid + ".csv",

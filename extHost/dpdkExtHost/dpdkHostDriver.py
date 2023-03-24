@@ -33,7 +33,7 @@ class ExtHostImpl(AbstractExtHost):
         cmd = "cd /home/" + self.cfg[
             "ext_host_user"] + "/p4sta/externalHost/dpdkExtHost/; touch " \
                                "receiver_stop; sleep 0.5; rm receiver_stop; " \
-                               "sudo build/receiver 0"
+                               "sudo build/receiver 0 -w 0000:86:00.0 -w 0000:86:00.1 --file-prefix m1 -m 2 -l 111"
         if self.cfg["selected_target"] == "bmv2":  # if mininet
             # load vfio module
             cmd = "sudo rmmod vfio-pci; sudo rmmod vfio_iommu_type1; " \
@@ -81,17 +81,7 @@ class ExtHostImpl(AbstractExtHost):
                         P4STA_utils.get_results_path(file_id)])
         subprocess.run(["scp", self.cfg["ext_host_user"] + "@" + self.cfg[
             "ext_host_ssh"] + ":/home/" + self.cfg["ext_host_user"] +
-                        "/p4sta/externalHost/dpdkExtHost/packet_sizes_" +
-                        file_id + ".csv",
-                        P4STA_utils.get_results_path(file_id)])
-        subprocess.run(["scp", self.cfg["ext_host_user"] + "@" + self.cfg[
-            "ext_host_ssh"] + ":/home/" + self.cfg["ext_host_user"] +
-                        "/p4sta/externalHost/dpdkExtHost/timestamp1_list_" +
-                        file_id + ".csv",
-                        P4STA_utils.get_results_path(file_id)])
-        subprocess.run(["scp", self.cfg["ext_host_user"] + "@" + self.cfg[
-            "ext_host_ssh"] + ":/home/" + self.cfg["ext_host_user"] +
-                        "/p4sta/externalHost/dpdkExtHost/timestamp2_list_" +
+                        "/p4sta/externalHost/dpdkExtHost/tos_timestamp_list_" +
                         file_id + ".csv",
                         P4STA_utils.get_results_path(file_id)])
         time.sleep(1)
