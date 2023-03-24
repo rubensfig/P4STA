@@ -22,7 +22,12 @@
 struct packet_data {
 	uint64_t t_stamp1;
 	uint64_t t_stamp2;
+        uint16_t tos;
 	uint64_t packet_sizes;
+	uint16_t b1;
+	uint16_t b2;
+	uint16_t b3;
+	uint16_t b4;
 	struct packet_data *next;
 };
 
@@ -143,9 +148,9 @@ static void lcore_main(void) {
 	 * for best performance.
 	 */
 	if (rte_eth_dev_socket_id(port) > 0 && rte_eth_dev_socket_id(port) != (int)rte_socket_id())
-		printf("WARNING, port %u is on remote NUMA node to "
+		printf("WARNING, port %u is on remote NUMA node %d to "
 				"polling thread.\n\tPerformance will "
-				"not be optimal.\n", port);
+				"not be optimal.\n", port, (int)rte_socket_id());
 
 	printf("\nCore %u Capturing packets. [Ctrl+C to quit]\n", rte_lcore_id());
 
@@ -189,10 +194,19 @@ static void lcore_main(void) {
 		    raw_packet_counter += 1;
 			if( (p_ether_type == 0x0800) && (p_len >= 64) ) {
 			    uint8_t ihl             = start[14] & 0x0f; //ip header length in 32 bit words
-                uint8_t ipv4_protocol   = start[23] & 0xff; //17 = UDP and 6 = TCP
+			    uint16_t tos            = start[15] & 0xff; 
+                	    uint8_t ipv4_protocol   = start[23] & 0xff; //17 = UDP and 6 = TCP
 			    uint8_t l4_start        = 14 + ihl*4; // 14 is ethernet header length in bytes
+			    uint16_t ip_b1 = start[30] & 0xff; // wtf
+			    uint16_t ip_b2 = start[31] & 0xff;
+			    uint16_t ip_b3 = start[32] & 0xff;
+			    uint16_t ip_b4 = start[33] & 0xff;
+                 #ifdef DEBUG
+// 30: ffffffc0                                                                   
+// 31: ffffffa8                                                                   
+// 32: 0a                                                                         
+// 33: 00
 
-                #ifdef DEBUG
 				printf("ihl %02x \n", ihl);
 				printf("ipv4_protocol %02x \n", ipv4_protocol);
 				printf("l4_start %02x \n", l4_start);
@@ -249,6 +263,11 @@ static void lcore_main(void) {
 				    p->t_stamp2 = be64toh(p->t_stamp2);
 				    p->t_stamp1 = (p->t_stamp1 >> 16) & 0x0000ffffffffffff;
 				    p->t_stamp2 = (p->t_stamp2 >> 16) & 0x0000ffffffffffff;
+				    p->tos = tos;
+				    p->b1 = ip_b1;
+				    p->b2 = ip_b2;
+				    p->b3 = ip_b3;
+				    p->b4 = ip_b4;
 
 				    if(first == NULL) first = last = p;
 
@@ -286,33 +305,27 @@ static void lcore_main(void) {
 
 	if (first != NULL){
 		//create files
-		strcpy(filename, "packet_sizes_");
+		strcpy(filename, "tos_timestamp_list_");
 		strcat(filename, fname);
 		strcat(filename, ".csv");
-		FILE *packet_sizes = fopen(filename, "w");
+		FILE *tos_timestamp_list = fopen(filename, "w");
 
-		strcpy(filename, "timestamp1_list_");
-		strcat(filename, fname);
-		strcat(filename, ".csv");
-		FILE *timestamp1_list = fopen(filename, "w");
-
-		strcpy(filename, "timestamp2_list_");
-		strcat(filename, fname);
-		strcat(filename, ".csv");
-		FILE *timestamp2_list = fopen(filename, "w");
+		fprintf(tos_timestamp_list, "tos,timestamp2,timestamp1,packet_size,ip\n");
 
 		struct packet_data *iter = first;
 		do {
-			fprintf(timestamp1_list, "%"PRIu64"\n", iter->t_stamp1);
-			fprintf(timestamp2_list, "%"PRIu64"\n", iter->t_stamp2);
-			fprintf(packet_sizes, "%"PRIu64"\n", iter->packet_sizes);
+			fprintf(tos_timestamp_list,
+ 				"%d,%"PRIu64",%"PRIu64",%"PRIu64",%"PRIu64".%"PRIu64".%"PRIu64".%"PRIu64"\n",
+				 iter->tos,
+ 				 iter->t_stamp2,
+				 iter->t_stamp1,
+				 iter->packet_sizes,
+				 iter->b1, iter->b2, iter->b3, iter->b4);
 			struct packet_data *current = iter;
 			iter = iter->next;
 			free(current);
 		} while(iter != NULL);
-		fclose(packet_sizes);
-		fclose(timestamp1_list);
-		fclose(timestamp2_list);
+		fclose(tos_timestamp_list);
 	}
 	status = fopen("receiver_finished.log", "w");
 	fprintf(status, "True");
