@@ -49,9 +49,36 @@ parser SwitchIngressParser(packet_in packet, out headers_t hdr, out my_metadata_
 		packet.extract(hdr.ethernet);
 		transition select(hdr.ethernet.etherType) {
 			16w0x0800: parse_ipv4;
+			16w0x88a8: parse_vlan_s;
+			16w0x8100: parse_vlan_c;
 			default: accept;
 		}
 	}
+            
+        state parse_vlan_s {
+            packet.extract(hdr.vlans);
+            transition select(hdr.vlans.etherType) {
+                16w0x8100: parse_vlan_c;
+		16w0x0800: parse_ipv4;
+                16w0x8864: parse_pppoes;
+		default: accept;
+            }
+        }
+
+        state parse_vlan_c {
+            packet.extract(hdr.vlanc);
+            transition select(hdr.vlanc.etherType) {
+                16w0x8864: parse_pppoes;
+		16w0x0800: parse_ipv4;
+		16w0x88a8: parse_vlan_s;
+		default: accept;
+            }
+        }
+
+    	state parse_pppoes {
+		packet.extract(hdr.pppoe);
+		transition parse_ipv4;
+    	}
 
 	state parse_ipv4 {
 		packet.extract(hdr.ipv4);
@@ -373,6 +400,12 @@ control SwitchIngress(
 
 	apply {
 		count_all_ingress();
+                if(hdr.vlans.isValid()) {
+                        hdr.vlans.setInvalid();
+                        hdr.vlanc.setInvalid();
+                        hdr.pppoe.setInvalid();
+			hdr.ethernet.etherType = 16w0x0800;
+                }
 		// only allow normal forwarding tables if tstamp2 is not 1 [which indicates a duplicated packet]
 		if((bit<32>)hdr.tcp_options_128bit_custom.timestamp2 != 0x1){
 			t_l1_forwarding.apply();

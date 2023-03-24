@@ -142,6 +142,12 @@ class ExtHostImpl(AbstractExtHost):
                         file_id + ".csv",
                         P4STA_utils.get_results_path(file_id)])
 
+        subprocess.run(["scp", self.cfg["ext_host_user"] + "@" + self.cfg[
+            "ext_host_ssh"] + ":/home/" + self.cfg["ext_host_user"] +
+                        "/p4sta/externalHost/python/tos_timestamp_list_" +
+                        file_id + ".csv",
+                        P4STA_utils.get_results_path(file_id)])
+
         P4STA_utils.execute_ssh(self.cfg["ext_host_user"],
                                 self.cfg["ext_host_ssh"],
                                 "cd /home/" + self.cfg["ext_host_user"] +

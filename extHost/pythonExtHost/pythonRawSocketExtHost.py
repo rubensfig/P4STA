@@ -48,6 +48,7 @@ ETH_P_ALL = 3
 place = 0
 timestamp1_array = []
 timestamp2_array = []
+tos_timestamp_array = {1: [], 33: [], 35: []}
 packet_sizes = []
 raw_packet_counter = 0
 time_throughput = []
@@ -95,6 +96,7 @@ while go:
         if ether_type == "0800":
             # ip header length in 32 bit words
             ihl = int(message[29], 16)
+            tos = int(message[30:32], 16)
             # 17 = UDP and 6 = TCP
             ipv4_protocol = int(message[46:48], 16)
             # 28 is ethernet header length in bytes*2
@@ -150,6 +152,7 @@ while go:
                             packet_sizes.append(int(len(message) / 2))
                             timestamp2_array.append(timestamp2)
                             timestamp1_array.append(timestamp1)
+                        tos_timestamp_array[tos].append((timestamp2, timestamp1, int(len(message) / 2)))
                 except Exception:
                     print(traceback.format_exc())
     # s.recv throws exception if it timeouts
@@ -190,6 +193,13 @@ if not error:
         wr = csv.writer(output, lineterminator='\n')
         for e in timestamp2_array:
             wr.writerow([e])
+    with open("tos_timestamp_list_" + str(name) + ".csv", "w") as output:
+        wr = csv.writer(output, lineterminator='\n')
+        wr.writerow(["tos","timestamp2","timestamp1", "packet_size"])
+        for tos, values in  tos_timestamp_array.items():
+            for i in values:
+                wr.writerow([tos, i[0], i[1], i[2]])
+
 
 with open("receiver_finished.log", "w") as f:
     f.write("True")

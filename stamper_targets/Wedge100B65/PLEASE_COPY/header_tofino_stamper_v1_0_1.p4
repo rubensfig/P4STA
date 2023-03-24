@@ -39,6 +39,21 @@ header udp_t {
 	bit<16> checksum;
 }
 
+header vlan_t {
+    bit<3>  pcp;
+    bit<1>  cfi;
+    bit<12> vid;
+    bit<16> etherType;
+}
+
+header pppoe_t {
+    bit<4>  ver;
+    bit<4>  type;
+    bit<8>  code;
+    bit<16> sess_id;
+    bit<16> len;
+    bit<16> proto;
+}
 
 // tofino inserts (not updates!) mac timestamp at given offset -> only space for timestamp2 is needed
 header tcp_options_128bit_custom_without_t {
@@ -79,6 +94,9 @@ struct timestamp_metadata_t {
 struct headers_t {
 	ptp_mac_hdr_t ptp;
 	ethernet_t ethernet;
+	vlan_t vlans;
+	vlan_t vlanc;
+	pppoe_t pppoe;
 	ipv4_t ipv4;
 	tcp_t tcp;
 	udp_t udp;
