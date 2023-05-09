@@ -400,12 +400,6 @@ control SwitchIngress(
 
 	apply {
 		count_all_ingress();
-                if(hdr.vlans.isValid()) {
-                        hdr.vlans.setInvalid();
-                        hdr.vlanc.setInvalid();
-                        hdr.pppoe.setInvalid();
-			hdr.ethernet.etherType = 16w0x0800;
-                }
 		// only allow normal forwarding tables if tstamp2 is not 1 [which indicates a duplicated packet]
 		if((bit<32>)hdr.tcp_options_128bit_custom.timestamp2 != 0x1){
 			t_l1_forwarding.apply();

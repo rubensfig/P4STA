@@ -21,6 +21,7 @@ import management_ui.views_dir.configure as configure
 import management_ui.views_dir.deploy as deploy
 import management_ui.views_dir.run as run
 import management_ui.views_dir.setup_devices as setup_devices
+import management_ui.api.api as api
 
 from management_ui import globals
 
@@ -104,6 +105,9 @@ urlpatterns = [
     path('job_delete_namespace/', configure.delete_namespace),
 
     # output_external_results.html
-    path('dygraph/', analyze.dygraph)
+    path('dygraph/', analyze.dygraph),
+
+    path('api/start_external', api.start_external),
+    path('api/stop_external', api.stop_external)
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
