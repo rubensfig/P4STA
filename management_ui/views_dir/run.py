@@ -46,7 +46,7 @@ def ping(request):
 
 # starts python receiver instance at external host
 def start_external(request):
-    if request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         print("start_external is ajax")
         try:
             cfg = P4STA_utils.read_current_cfg()
