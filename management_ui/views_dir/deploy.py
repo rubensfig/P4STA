@@ -65,7 +65,7 @@ def stamper_status_wrapper(request, html_file):
 
 # starts instance of p4 device software for handling the live table entries
 def start_stamper_software(request):
-    if request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         try:
             # some stamper targets may take long time to start
             start_stamper = rpyc.timed(
@@ -97,7 +97,7 @@ def get_stamper_startup_log(request):
 
 # pushes p4 table entries and port settings onto p4 device
 def deploy(request):
-    if not request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') != 'XMLHttpRequest':
         return
     try:
         deploy = rpyc.timed(globals.core_conn.root.deploy, 40)
@@ -118,7 +118,7 @@ def deploy(request):
 
 # stops instance of p4 device software for handling the live table entries
 def stop_stamper_software(request):
-    if request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         try:
             globals.core_conn.root.stop_stamper_software()
             time.sleep(1)

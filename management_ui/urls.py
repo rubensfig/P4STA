@@ -108,6 +108,7 @@ urlpatterns = [
     path('dygraph/', analyze.dygraph),
 
     path('api/start_external', api.start_external),
-    path('api/stop_external', api.stop_external)
+    path('api/stop_external', api.stop_external),
+    path('api/reset', api.reset),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

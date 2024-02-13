@@ -49,3 +49,13 @@ def stop_external(request):
     stoppable = stop_external()
     stoppable.wait()
     return Response("")
+
+
+@api_view(('GET',))
+def reset(request):
+    try:
+        answer = globals.core_conn.root.reset()
+        return Response("ok")
+    except Exception as e:
+        print(e)
+        return Response("error")

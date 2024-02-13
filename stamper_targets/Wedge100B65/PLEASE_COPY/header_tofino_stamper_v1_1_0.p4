@@ -87,6 +87,7 @@ struct timestamp_metadata_t {
 struct headers_t {
 	ptp_mac_hdr_t ptp;
 	ethernet_t ethernet;
+	vlan_tag_t vlans;
 	vlan_tag_t vlan;
 	ipv4_t ipv4;
 	tcp_t tcp;

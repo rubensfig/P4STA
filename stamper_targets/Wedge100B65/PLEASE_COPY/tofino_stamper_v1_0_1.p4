@@ -60,7 +60,6 @@ parser SwitchIngressParser(packet_in packet, out headers_t hdr, out my_metadata_
             transition select(hdr.vlans.etherType) {
                 16w0x8100: parse_vlan_c;
 		16w0x0800: parse_ipv4;
-                16w0x8864: parse_pppoes;
 		default: accept;
             }
         }
@@ -68,17 +67,10 @@ parser SwitchIngressParser(packet_in packet, out headers_t hdr, out my_metadata_
         state parse_vlan_c {
             packet.extract(hdr.vlanc);
             transition select(hdr.vlanc.etherType) {
-                16w0x8864: parse_pppoes;
 		16w0x0800: parse_ipv4;
-		16w0x88a8: parse_vlan_s;
 		default: accept;
             }
         }
-
-    	state parse_pppoes {
-		packet.extract(hdr.pppoe);
-		transition parse_ipv4;
-    	}
 
 	state parse_ipv4 {
 		packet.extract(hdr.ipv4);
@@ -318,6 +310,19 @@ control SwitchIngress(
 		size = 64;
 	}
 
+	table t_p4tg_forwarding {
+		key = {
+			ig_intr_md.ingress_port : exact;
+			hdr.udp.dstPort : exact;
+		}
+		actions = {
+			no_op;
+			send;
+		}
+		default_action = no_op;
+		size = 64;
+	}
+
 	table t_l2_forwarding {
 		key =  {
 			ig_intr_md.ingress_port : exact;
@@ -404,6 +409,7 @@ control SwitchIngress(
 		if((bit<32>)hdr.tcp_options_128bit_custom.timestamp2 != 0x1){
 			t_l1_forwarding.apply();
 			t_l2_forwarding.apply();
+			t_p4tg_forwarding.apply();
 		}
 		if(hdr.ipv4.isValid()) {
 			if((bit<32>)hdr.tcp_options_128bit_custom.timestamp2 != 0x1){
@@ -528,14 +534,32 @@ parser SwitchEgressParser(packet_in packet, out headers_t hdr, out my_metadata_t
 		transition parse_ethernet;
 	}
 
-
 	state parse_ethernet {
 		packet.extract(hdr.ethernet);
 		transition select(hdr.ethernet.etherType) {
 			16w0x0800: parse_ipv4;
+			16w0x88a8: parse_vlan_s;
+			16w0x8100: parse_vlan_c;
 			default: accept;
 		}
 	}
+            
+        state parse_vlan_s {
+            packet.extract(hdr.vlans);
+            transition select(hdr.vlans.etherType) {
+                16w0x8100: parse_vlan_c;
+		16w0x0800: parse_ipv4;
+		default: accept;
+            }
+        }
+
+        state parse_vlan_c {
+            packet.extract(hdr.vlanc);
+            transition select(hdr.vlanc.etherType) {
+		16w0x0800: parse_ipv4;
+		default: accept;
+            }
+        }
 
 	state parse_ipv4 {
 		packet.extract(hdr.ipv4);
@@ -752,6 +776,8 @@ control SwitchEgressDeparser(packet_out packet, inout headers_t hdr, in my_metad
 		#ifdef MAC_STAMPING
 		packet.emit(hdr.ptp);
 		packet.emit(hdr.ethernet);
+		packet.emit(hdr.vlans);
+		packet.emit(hdr.vlanc);
 		packet.emit(hdr.ipv4);
 		packet.emit(hdr.tcp);
 		packet.emit(hdr.udp);

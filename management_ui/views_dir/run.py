@@ -123,7 +123,7 @@ def start_external(request):
 
 # resets registers in p4 device by overwriting them with 0
 def reset(request):
-    if request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         try:
             answer = globals.core_conn.root.reset()
             return render(
@@ -138,7 +138,7 @@ def reset(request):
 # stops last started instance of python receiver at external host
 # and starts reading p4 registers
 def stop_external(request):
-    if request.is_ajax():
+    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         try:
             # read time increases with amount of hosts
             stop_external = rpyc.timed(
